@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Energy Visit Plan Submission</title>
+<style>
+  :root {
+    --blue-dark: #0b3d91;
+    --blue-dark-hover: #082d6b;
+    --blue-light: #dbeafe;
+    --blue-bg: #eef5fd;
+    --border: #c7d6ea;
+    --text: #1e293b;
+    --muted: #64748b;
+    --danger: #d93025;
+    --danger-bg: #fdecea;
+    --success: #1e7e34;
+    --success-bg: #e6f4ea;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px 16px;
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--blue-bg);
+    color: var(--text);
+  }
+  .container {
+    max-width: 980px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 6px 24px rgba(11, 61, 145, 0.12);
+    padding: 32px;
+  }
+  h1 {
+    text-align: center;
+    margin: 0 0 28px;
+    color: var(--blue-dark);
+    font-size: 1.9rem;
+    padding-bottom: 14px;
+    border-bottom: 3px solid var(--blue-light);
+  }
+  h2 {
+    font-size: 1.1rem;
+    color: var(--blue-dark);
+    margin: 0 0 14px;
+  }
+  .section { margin-bottom: 28px; }
+
+  /* Visit information: 2 columns on desktop, 1 on mobile */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .field { display: flex; flex-direction: column; }
+  label { font-weight: 600; margin-bottom: 6px; font-size: 0.95rem; }
+  label .req { color: var(--danger); }
+
+  input[type="text"], input[type="date"] {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 1rem;
+    font-family: inherit;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--text);
+    transition: border-color .15s, box-shadow .15s;
+  }
+  input:focus {
+    outline: none;
+    border-color: var(--blue-dark);
+    box-shadow: 0 0 0 3px rgba(11, 61, 145, 0.15);
+  }
+  input.invalid {
+    border-color: var(--danger);
+    background: var(--danger-bg);
+  }
+  .error-msg {
+    color: var(--danger);
+    font-size: 0.82rem;
+    margin-top: 4px;
+    min-height: 0;
+    display: none;
+  }
+  .error-msg.show { display: block; }
+
+  /* Customer table */
+  table { width: 100%; border-collapse: separate; border-spacing: 0; }
+  thead th {
+    background: var(--blue-light);
+    color: var(--blue-dark);
+    text-align: left;
+    padding: 12px;
+    font-size: 0.95rem;
+    border-bottom: 2px solid var(--border);
+  }
+  thead th:first-child { border-top-left-radius: 10px; }
+  thead th:last-child { border-top-right-radius: 10px; text-align: center; }
+  tbody td {
+    padding: 10px 8px;
+    vertical-align: top;
+    border-bottom: 1px solid #e5edf7;
+  }
+  td.action-cell { text-align: center; width: 110px; }
+  th.col-code { width: 20%; }
+  th.col-name { width: 28%; }
+  th.col-action { width: 110px; }
+
+  /* Buttons */
+  button {
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 10px;
+    padding: 14px 26px;
+    cursor: pointer;
+    transition: background .15s, transform .05s, opacity .15s;
+  }
+  button:active { transform: scale(0.98); }
+  .btn-primary { background: var(--blue-dark); color: #fff; box-shadow: 0 2px 6px rgba(11,61,145,.3); }
+  .btn-primary:hover { background: var(--blue-dark-hover); }
+  .btn-secondary { background: #fff; color: var(--blue-dark); border: 2px solid var(--blue-dark); }
+  .btn-secondary:hover { background: var(--blue-light); }
+  .btn-add { background: var(--blue-dark); color: #fff; margin-top: 16px; }
+  .btn-add:hover { background: var(--blue-dark-hover); }
+  .btn-remove { background: #fff; color: var(--danger); border: 1.5px solid var(--danger); padding: 10px 14px; font-size: 0.9rem; }
+  .btn-remove:hover:not(:disabled) { background: var(--danger-bg); }
+  .btn-remove:disabled { opacity: 0.4; cursor: not-allowed; }
+  button:disabled { cursor: not-allowed; opacity: 0.6; }
+
+  .actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
+  .actions button { min-width: 200px; }
+
+  /* Messages */
+  .message {
+    display: none;
+    padding: 14px 16px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    font-weight: 600;
+  }
+  .message.success { display: block; background: var(--success-bg); color: var(--success); border: 1px solid #b7dfc1; }
+  .message.error { display: block; background: var(--danger-bg); color: var(--danger); border: 1px solid #f5c2be; }
+
+  /* Tablet */
+  @media (max-width: 800px) {
+    .container { padding: 24px 18px; }
+  }
+
+  /* Mobile: stack fields, turn rows into cards (no horizontal scroll) */
+  @media (max-width: 640px) {
+    body { padding: 12px 8px; }
+    .container { padding: 20px 14px; border-radius: 10px; }
+    h1 { font-size: 1.5rem; }
+    .grid-2 { grid-template-columns: 1fr; gap: 16px; }
+
+    table, tbody, tr, td { display: block; width: 100%; }
+    thead { display: none; }
+    tbody tr {
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 14px;
+      background: #f8fbff;
+      box-shadow: 0 1px 4px rgba(11,61,145,.08);
+    }
+    tbody td { border: none; padding: 6px 0; }
+    tbody td::before {
+      content: attr(data-label);
+      display: block;
+      font-weight: 600;
+      font-size: 0.92rem;
+      margin-bottom: 5px;
+    }
+    td.action-cell { width: 100%; text-align: left; }
+    td.action-cell::before { display: none; }
+    .btn-remove, .btn-add, .actions button { width: 100%; }
+    .actions { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Energy Visit Plan Submission</h1>
+
+  <div id="message" class="message" role="status" aria-live="polite"></div>
+
+  <form id="visitForm" novalidate>
+
+    <!-- Visit Information -->
+    <div class="section">
+      <h2>Visit Information</h2>
+      <div class="grid-2">
+        <div class="field">
+          <label for="visitDate">Date <span class="req">*</span></label>
+          <input type="date" id="visitDate" name="visitDate">
+          <span class="error-msg" id="visitDate-error"></span>
+        </div>
+        <div class="field">
+          <label for="personName">Person Name <span class="req">*</span></label>
+          <input type="text" id="personName" name="personName" placeholder="Enter person name" autocomplete="off">
+          <span class="error-msg" id="personName-error"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Customer Visit Details -->
+    <div class="section">
+      <h2>Customer Visit Details</h2>
+      <table id="customerTable">
+        <thead>
+          <tr>
+            <th class="col-code">Customer Code</th>
+            <th class="col-name">Customer Name</th>
+            <th>Address</th>
+            <th class="col-action">Action</th>
+          </tr>
+        </thead>
+        <tbody id="customerBody"></tbody>
+      </table>
+      <div class="error-msg" id="customers-error"></div>
+      <button type="button" class="btn-add" id="addCustomerBtn">+ Add Customer</button>
+    </div>
+
+    <!-- Buttons -->
+    <div class="actions">
+      <button type="submit" class="btn-primary" id="submitBtn">Submit Visit Plan</button>
+      <button type="button" class="btn-secondary" id="clearBtn">Clear Form</button>
+    </div>
+  </form>
+</div>
+
+<script>
+/* =====================================================================
+   CONFIGURATION
+   Paste your Power Automate "HTTP POST URL" between the quotes below.
+   Leave it empty to only log the data to the browser console.
+   ===================================================================== */
+const POWER_AUTOMATE_URL = "https://default175a0ab353f14ddaa144dca55432bb.13.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/12/workflows/1356585389ba4eac9c4860de62e79d77/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=Gm-2WR8B_luYZ70fZ2yqbnYE8lbqCMnxOUco4_EJU7c";
+
+const customerBody = document.getElementById("customerBody");
+const form = document.getElementById("visitForm");
+const messageBox = document.getElementById("message");
+
+/* =====================================================================
+   ADD CUSTOMER ROW
+   Creates one empty row (Customer Code, Customer Name, Address, Remove).
+   ===================================================================== */
+function addCustomerRow() {
+  const tr = document.createElement("tr");
+  tr.className = "customer-row";
+  tr.innerHTML = `
+    <td data-label="Customer Code">
+      <input type="text" class="cust-code" placeholder="Enter customer code" autocomplete="off">
+      <span class="error-msg"></span>
+    </td>
+    <td data-label="Customer Name">
+      <input type="text" class="cust-name" placeholder="Enter customer name" autocomplete="off">
+      <span class="error-msg"></span>
+    </td>
+    <td data-label="Address">
+      <input type="text" class="cust-address" placeholder="Enter customer address" autocomplete="off">
+      <span class="error-msg"></span>
+    </td>
+    <td class="action-cell">
+      <button type="button" class="btn-remove">Remove</button>
+    </td>`;
+  tr.querySelector(".btn-remove").addEventListener("click", () => removeCustomerRow(tr));
+  // Clear the red highlight as soon as the user starts typing
+  tr.querySelectorAll("input").forEach(inp => inp.addEventListener("input", () => clearError(inp)));
+  customerBody.appendChild(tr);
+  updateRemoveButtons();
+  return tr;
+}
+
+/* =====================================================================
+   REMOVE CUSTOMER ROW
+   The last remaining row can never be removed.
+   ===================================================================== */
+function removeCustomerRow(tr) {
+  if (customerBody.children.length <= 1) return;
+  tr.remove();
+  updateRemoveButtons();
+}
+
+// Disable the Remove button when only one row is left
+function updateRemoveButtons() {
+  const only = customerBody.children.length <= 1;
+  customerBody.querySelectorAll(".btn-remove").forEach(b => (b.disabled = only));
+}
+
+/* =====================================================================
+   FORM VALIDATION
+   Highlights every empty required field and shows a message.
+   Returns true only when all required data is present.
+   ===================================================================== */
+function setError(input, text) {
+  input.classList.add("invalid");
+  const msg = input.parentElement.querySelector(".error-msg");
+  if (msg) { msg.textContent = text; msg.classList.add("show"); }
+}
+
+function clearError(input) {
+  input.classList.remove("invalid");
+  const msg = input.parentElement.querySelector(".error-msg");
+  if (msg) { msg.textContent = ""; msg.classList.remove("show"); }
+}
+
+function validateForm() {
+  let valid = true;
+  let firstInvalid = null;
+
+  const check = (input, text) => {
+    if (!input.value.trim()) {
+      setError(input, text);
+      valid = false;
+      if (!firstInvalid) firstInvalid = input;
+    } else {
+      clearError(input);
+    }
+  };
+
+  check(document.getElementById("visitDate"), "Please select the date.");
+  check(document.getElementById("personName"), "Please enter the person name.");
+
+  // At least one customer row must exist
+  const rows = customerBody.querySelectorAll(".customer-row");
+  const listError = document.getElementById("customers-error");
+  if (rows.length === 0) {
+    listError.textContent = "At least one customer is required.";
+    listError.classList.add("show");
+    valid = false;
+  } else {
+    listError.classList.remove("show");
+  }
+
+  rows.forEach(row => {
+    check(row.querySelector(".cust-code"), "Customer code is required.");
+    check(row.querySelector(".cust-name"), "Customer name is required.");
+    check(row.querySelector(".cust-address"), "Address is required.");
+  });
+
+  if (firstInvalid) firstInvalid.focus();
+  return valid;
+}
+
+/* =====================================================================
+   CLEAR FORM
+   Asks for confirmation, then resets everything to one empty row.
+   ===================================================================== */
+function resetForm() {
+  form.reset();
+  customerBody.innerHTML = "";
+  addCustomerRow();
+  form.querySelectorAll(".invalid").forEach(i => i.classList.remove("invalid"));
+  form.querySelectorAll(".error-msg").forEach(m => { m.textContent = ""; m.classList.remove("show"); });
+}
+
+function clearForm() {
+  if (confirm("Are you sure you want to clear the form?")) {
+    resetForm();
+    hideMessage();
+  }
+}
+
+/* =====================================================================
+   FORM SUBMISSION
+   1) collectFormData()  - reads the form into a JS object
+   2) saveVisitPlan()    - the ONLY function that sends data anywhere.
+                           Edit this function to change the destination.
+   ===================================================================== */
+function collectFormData() {
+  const customers = [];
+  customerBody.querySelectorAll(".customer-row").forEach(row => {
+    customers.push({
+      CustomerCode: row.querySelector(".cust-code").value.trim(),
+      CustomerName: row.querySelector(".cust-name").value.trim(),
+      Address: row.querySelector(".cust-address").value.trim()
+    });
+  });
+  return {
+    Date: document.getElementById("visitDate").value,       // yyyy-mm-dd
+    PersonName: document.getElementById("personName").value.trim(),
+    Customers: customers
+  };
+}
+
+// Replace / extend this function to save the data to another system.
+async function saveVisitPlan(data) {
+  console.log("Energy Visit Plan submitted:", data);
+
+  if (!POWER_AUTOMATE_URL) return; // console-only mode
+
+  const response = await fetch(POWER_AUTOMATE_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  });
+  if (!response.ok) throw new Error("Server responded with status " + response.status);
+}
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  hideMessage();
+  if (!validateForm()) return;
+
+  const submitBtn = document.getElementById("submitBtn");
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Submitting...";
+
+  try {
+    await saveVisitPlan(collectFormData());
+    showMessage("Visit plan submitted successfully.", "success");
+    resetForm();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  } catch (err) {
+    console.error(err);
+    showMessage("Submission failed. Please check your connection and try again.", "error");
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Submit Visit Plan";
+  }
+});
+
+/* ---------- Helpers & event wiring ---------- */
+function showMessage(text, type) {
+  messageBox.textContent = text;
+  messageBox.className = "message " + type;
+}
+function hideMessage() { messageBox.className = "message"; messageBox.textContent = ""; }
+
+document.getElementById("addCustomerBtn").addEventListener("click", () => {
+  const row = addCustomerRow();
+  row.querySelector(".cust-code").focus();
+});
+document.getElementById("clearBtn").addEventListener("click", clearForm);
+["visitDate", "personName"].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener("input", () => clearError(el));
+});
+
+// Start with one customer row
+addCustomerRow();
+</script>
+</body>
+</html>
